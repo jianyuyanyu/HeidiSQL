@@ -3172,35 +3172,35 @@ object MainForm: TMainForm
     end
     object actQuickFilterFocused3: TAction
       Category = 'Data'
-      Caption = 'Quick filter: Column > Focused'
+      Caption = 'Quick filter: Column LIKE Focused%'
       ImageIndex = 61
       ImageName = 'icons8-sort-right'
       OnExecute = QuickFilterClick
     end
     object actQuickFilterFocused4: TAction
       Category = 'Data'
-      Caption = 'Quick filter: Column < Focused'
+      Caption = 'Quick filter: Column LIKE %Focused'
       ImageIndex = 61
       ImageName = 'icons8-sort-right'
       OnExecute = QuickFilterClick
     end
     object actQuickFilterFocused5: TAction
       Category = 'Data'
-      Caption = 'Quick filter: Column LIKE Focused%'
+      Caption = 'Quick filter: Column LIKE %Focused%'
       ImageIndex = 61
       ImageName = 'icons8-sort-right'
       OnExecute = QuickFilterClick
     end
     object actQuickFilterFocused6: TAction
       Category = 'Data'
-      Caption = 'Quick filter: Column LIKE %Focused'
+      Caption = 'Quick filter: Column > Focused'
       ImageIndex = 61
       ImageName = 'icons8-sort-right'
       OnExecute = QuickFilterClick
     end
     object actQuickFilterFocused7: TAction
       Category = 'Data'
-      Caption = 'Quick filter: Column LIKE %Focused%'
+      Caption = 'Quick filter: Column < Focused'
       ImageIndex = 61
       ImageName = 'icons8-sort-right'
       OnExecute = QuickFilterClick
