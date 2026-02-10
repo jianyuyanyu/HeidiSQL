@@ -226,6 +226,8 @@ end;
 
 
 function TfrmTriggerEditor.ApplyModifications: TModalResult;
+var
+  OldCreateCode: String;
 begin
   // Edit mode means we drop the trigger and recreate it, as there is no ALTER TRIGGER.
   Result := mrOk;
@@ -235,7 +237,9 @@ begin
     // So, we take the risk of loosing the trigger for cases in which the user has SQL errors in
     // his statement. The user must fix such errors and re-press "Save" while we have them in memory,
     // otherwise the trigger attributes are lost forever.
+    OldCreateCode := '';
     if ObjectExists then try
+      OldCreateCode := DBObject.CreateCode;
       DBObject.Connection.Query('DROP TRIGGER '+DBObject.Connection.QuoteIdent(DBObject.Name));
     except
     end;
@@ -251,6 +255,8 @@ begin
     on E:EDbError do begin
       ErrorDialog(E.Message);
       Result := mrAbort;
+      if not OldCreateCode.IsEmpty then
+        DBObject.Connection.Query(OldCreateCode);
     end;
   end;
 end;
