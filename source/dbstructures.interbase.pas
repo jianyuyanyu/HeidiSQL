@@ -229,6 +229,10 @@ begin
       '                              AND F.RDB$CHARACTER_SET_ID = COLL.RDB$CHARACTER_SET_ID'+
       ' WHERE r.RDB$RELATION_NAME=%s'+
       ' ORDER BY r.RDB$FIELD_POSITION';
+    qGetCollations: Result := 'SELECT RDB$COLLATION_NAME AS "Collation",'+
+      '   RDB$COLLATION_ID AS "Id",'+
+      '   RDB$CHARACTER_SET_ID'+
+      ' FROM RDB$COLLATIONS';
   end;
 end;
 

@@ -3293,6 +3293,24 @@ begin
       );
     qForeignKeyDrop: Result := 'DROP FOREIGN KEY %s';
     qGetTableColumns: Result := '';
+    qGetCollations: Result := IfThen(
+      FServerVersion >= 40100,
+      'SHOW COLLATION',
+      ''
+      );
+    // Issue #1917: MariaDB 10.10.1+ versions have additional collations in IS.COLLATION_CHARACTER_SET_APPLICABILITY
+    qGetCollationsExtended: Result := IfThen(
+      FServerVersion >= 101001,
+      'SELECT'+
+        ' FULL_COLLATION_NAME AS `Collation`'+
+        ', CHARACTER_SET_NAME AS `Charset`'+
+        ', ID AS `Id`'+
+        ', IS_DEFAULT AS `Default`'+
+        ', 0 AS `Sortlen`'+
+        ' FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY'+
+        ' ORDER BY `Collation`',
+      ''
+      );
     else Result := inherited;
   end;
 end;

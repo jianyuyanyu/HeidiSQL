@@ -418,7 +418,7 @@ type
   TDBEvent = procedure(Connection: TDBConnection; Database: String) of object;
   TDBDataTypeArray = Array of TDBDataType;
   TFeatureOrRequirement = (frSrid, frTimezoneVar, frTemporalTypesFraction, frKillQuery,
-    frLockedTables, frShowCreateTrigger, frShowWarnings, frShowCollation, frShowCollationExtended,
+    frLockedTables, frShowCreateTrigger, frShowWarnings,
     frShowCharset, frIntegerDisplayWidth, frShowFunctionStatus, frShowProcedureStatus,
     frShowTriggers, frShowEvents, frColumnDefaultParentheses,
     frHelpKeyword, frEditVariables, frCreateView, frCreateProcedure, frCreateFunction,
@@ -643,7 +643,6 @@ type
       function GetLastErrorMsg: String; override;
       function GetAllDatabases: TStringList; override;
       function GetTableEngines: TStringList; override;
-      function GetCollationTable: TDBQuery; override;
       function GetCharsetTable: TDBQuery; override;
       function GetCreateViewCode(Database, Name: String): String;
       function GetRowCount(Obj: TDBObject; ForceExact: Boolean=False): Int64; override;
@@ -676,7 +675,6 @@ type
       function GetLastErrorCode: Cardinal; override;
       function GetLastErrorMsg: String; override;
       function GetAllDatabases: TStringList; override;
-      function GetCollationTable: TDBQuery; override;
       function GetCharsetTable: TDBQuery; override;
       function GetRowCount(Obj: TDBObject; ForceExact: Boolean=False): Int64; override;
       procedure FetchDbObjects(db: String; var Cache: TDBObjectList); override;
@@ -782,7 +780,6 @@ type
       function GetLastErrorCode: Cardinal; override;
       function GetLastErrorMsg: String; override;
       function GetAllDatabases: TStringList; override;
-      function GetCollationTable: TDBQuery; override;
       function GetCharsetTable: TDBQuery; override;
       procedure FetchDbObjects(db: String; var Cache: TDBObjectList); override;
     public
@@ -5519,56 +5516,14 @@ function TDBConnection.GetCollationTable: TDBQuery;
 begin
   Log(lcDebug, 'Fetching list of collations ...');
   Ping(True);
-  Result := FCollationTable;
-end;
-
-
-function TMySQLConnection.GetCollationTable: TDBQuery;
-begin
-  inherited;
-  if (not Assigned(FCollationTable)) and Has(frShowCollation) then begin
-    if Has(frShowCollationExtended) then try
-      // Issue #1917: MariaDB 10.10.1+ versions have additional collations in IS.COLLATION_CHARACTER_SET_APPLICABILITY
-      FCollationTable := GetResults('SELECT'+
-        ' FULL_COLLATION_NAME AS '+QuoteIdent('Collation')+
-        ', CHARACTER_SET_NAME AS '+QuoteIdent('Charset')+
-        ', ID AS '+QuoteIdent('Id')+
-        ', IS_DEFAULT AS '+QuoteIdent('Default')+
-        ', 0 AS '+QuoteIdent('Sortlen')+
-        ' FROM '+QuoteIdent(InfSch)+'.COLLATION_CHARACTER_SET_APPLICABILITY'+
-        ' ORDER BY '+QuoteIdent('Collation')
-        );
+  if (not Assigned(FCollationTable)) and FSqlProvider.Has(qGetCollations) then begin
+    if FSqlProvider.Has(qGetCollationsExtended) then try
+      FCollationTable := GetResults(FSqlProvider.GetSql(qGetCollationsExtended));
     except
       on E:EDbError do;
     end;
     if not Assigned(FCollationTable) then
-      FCollationTable := GetResults('SHOW COLLATION');
-  end;
-  if Assigned(FCollationTable) then
-    FCollationTable.First;
-  Result := FCollationTable;
-end;
-
-
-function TAdoDBConnection.GetCollationTable: TDBQuery;
-begin
-  inherited;
-  if (not Assigned(FCollationTable)) then
-    FCollationTable := GetResults('SELECT '+EscapeString('')+' AS '+QuoteIdent('Collation')+', '+
-      EscapeString('')+' AS '+QuoteIdent('Charset')+', 0 AS '+QuoteIdent('Id')+', '+
-      EscapeString('')+' AS '+QuoteIdent('Default')+', '+EscapeString('')+' AS '+QuoteIdent('Compiled')+', '+
-      '1 AS '+QuoteIdent('Sortlen'));
-  if Assigned(FCollationTable) then
-    FCollationTable.First;
-  Result := FCollationTable;
-end;
-
-
-function TInterbaseConnection.GetCollationTable: TDBQuery;
-begin
-  inherited;
-  if not Assigned(FCollationTable) then begin
-    FCollationTable := GetResults('SELECT RDB$COLLATION_NAME AS '+QuoteIdent('Collation')+', RDB$COLLATION_ID AS '+QuoteIdent('Id')+', RDB$CHARACTER_SET_ID FROM RDB$COLLATIONS');
+      FCollationTable := GetResults(FSqlProvider.GetSql(qGetCollations));
   end;
   if Assigned(FCollationTable) then
     FCollationTable.First;
@@ -6732,8 +6687,6 @@ begin
         frLockedTables: Result := (not FParameters.IsProxySQLAdmin) and (ServerVersionInt >= 50124);
         frShowCreateTrigger: Result := ServerVersionInt >= 50121;
         frShowWarnings: Result := ServerVersionInt >= 40100;
-        frShowCollation: Result := ServerVersionInt >= 40100;
-        frShowCollationExtended: Result := FParameters.IsMariaDB and (ServerVersionInt >= 101001);
         frShowCharset: Result := ServerVersionInt >= 40100;
         frIntegerDisplayWidth: Result := (FParameters.IsMySQL(True) and (ServerVersionInt < 80017)) or
           (not FParameters.IsMySQL(True));

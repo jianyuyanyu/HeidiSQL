@@ -471,6 +471,10 @@ begin
     qEnableForeignKeyChecks: Result := '';
     qForeignKeyDrop: Result := 'DROP FOREIGN KEY %s';
     qGetTableColumns: Result := '';
+    qGetCollations: Result := 'SELECT '''' AS "Collation", '+
+      ''''' AS "Charset", 0 AS "Id", '+
+      ''''' AS "Default", '''' AS "Compiled", '+
+      '1 AS "Sortlen"';
     else Result := inherited;
   end;
 end;
