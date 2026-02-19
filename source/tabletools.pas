@@ -179,7 +179,7 @@ type
     FHeaderCreated: Boolean;
     FFindSeeResultSQL: TStringList;
     ToFile, ToDir, ToClipboard, ToDb, ToServer: Boolean;
-    FObjectSizes, FObjectSizesDone, FObjectSizesDoneExact: Int64;
+    FObjectCount, FObjectSizes, FObjectSizesDone, FObjectSizesDoneExact: Int64;
     FStartTimeAll: Cardinal;
     procedure WMNCLBUTTONDOWN(var Msg: TWMNCLButtonDown) ; message WM_NCLBUTTONDOWN;
     procedure WMNCLBUTTONUP(var Msg: TWMNCLButtonUp) ; message WM_NCLBUTTONUP;
@@ -404,6 +404,7 @@ begin
   TreeObjects.RootNodeCount := Mainform.DBtree.RootNodeCount;
 
   FObjectSizes := 0;
+  FObjectCount := 0;
 
   // Init all objects in active database, so the tree does not just check the db node
   // if we want the first child only. See issue #2267.
@@ -647,7 +648,7 @@ begin
   SomeChecked := TreeObjects.CheckedCount > 0;
   TExtForm.PageControlTabHighlight(tabsTools);
   btnSeeResults.Visible := tabsTools.ActivePage = tabFind;
-  lblCheckedSize.Caption := f_('Selected objects size: %s', [FormatByteNumber(FObjectSizes)]);
+  lblCheckedSize.Caption := f_('%s selected objects, size: %s', [FObjectCount.ToString, FormatByteNumber(FObjectSizes)]);
   menuExportOptionClick(Sender);
   if tabsTools.ActivePage = tabMaintenance then begin
     btnExecute.Caption := _('Execute');
@@ -831,7 +832,7 @@ begin
   // Return list with checked objects from database node
   // The caller doesn't need to care whether type grouping in tree is activated
   Result := TDBObjectList.Create(False);
-  Child := TreeObjects.GetFirstVisibleChild(DBNode);
+  Child := TreeObjects.GetFirstChild(DBNode);
   while Assigned(Child) do begin
     if Child.CheckState in CheckedStates then begin
       ChildObj := TreeObjects.GetNodeData(Child);
@@ -839,13 +840,13 @@ begin
       case ChildObj.NodeType of
 
         lntGroup: begin
-          GrandChild := TreeObjects.GetFirstVisibleChild(Child);
+          GrandChild := TreeObjects.GetFirstChild(Child);
           while Assigned(GrandChild) do begin
             if GrandChild.CheckState in CheckedStates then begin
               GrandChildObj := TreeObjects.GetNodeData(GrandChild);
               Result.Add(GrandChildObj^);
             end;
-            GrandChild := TreeObjects.GetNextVisibleSibling(GrandChild);
+            GrandChild := TreeObjects.GetNextSibling(GrandChild);
           end;
         end
 
@@ -855,7 +856,7 @@ begin
 
       end;
     end;
-    Child := TreeObjects.GetNextVisibleSibling(Child);
+    Child := TreeObjects.GetNextSibling(Child);
   end;
 end;
 
@@ -942,7 +943,7 @@ begin
 
   SessionNode := TreeObjects.GetFirstChild(nil);
   while Assigned(SessionNode) do begin
-    DBNode := TreeObjects.GetFirstVisibleChild(SessionNode);
+    DBNode := TreeObjects.GetFirstChild(SessionNode);
     while Assigned(DBNode) do begin
       if not (DBNode.CheckState in [csUncheckedNormal, csUncheckedPressed]) then begin
         Triggers.Clear;
@@ -979,7 +980,7 @@ begin
 
       end;
       if FCancelled then Break;
-      DBNode := TreeObjects.GetNextVisibleSibling(DBNode);
+      DBNode := TreeObjects.GetNextSibling(DBNode);
     end; // End of db item loop
     if FCancelled then Break;
     SessionNode := TreeObjects.GetNextSibling(SessionNode);
@@ -1444,18 +1445,20 @@ begin
   timerCalcSize.Enabled := False;
   SessionNode := TreeObjects.GetFirstChild(nil);
   FObjectSizes := 0;
+  FObjectCount := 0;
   while Assigned(SessionNode) do begin
-    DBNode := TreeObjects.GetFirstVisibleChild(SessionNode);
+    DBNode := TreeObjects.GetFirstChild(SessionNode);
     while Assigned(DBNode) do begin
       if not (DBNode.CheckState in [csUncheckedNormal, csUncheckedPressed]) then begin
         CheckedObjects := GetCheckedObjects(DBNode);
         for DBObj in CheckedObjects do begin
           Inc(FObjectSizes, DBObj.Size);
+          Inc(FObjectCount);
         end;
       end;
-      DBNode := TreeObjects.GetNextVisibleSibling(DBNode);
+      DBNode := TreeObjects.GetNextSibling(DBNode);
     end;
-    SessionNode := TreeObjects.GetNextVisibleSibling(SessionNode);
+    SessionNode := TreeObjects.GetNextSibling(SessionNode);
   end;
   ValidateControls(Sender);
 end;
